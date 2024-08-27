@@ -1,0 +1,43 @@
+package main
+
+templ base() {
+	<!DOCTYPE html>
+	<html lang="en">
+		<head>
+			<meta charset="UTF-8"/>
+			<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+			<title>Document</title>
+		</head>
+		<body>
+			{ children... }
+		</body>
+	</html>
+}
+
+templ recipe_tmpl(recipe Recipe) {
+	@base() {
+		<h1>{ recipe.Title }</h1>
+		<h2>Ingredients</h2>
+		<ul>
+			for _, ingredient := range recipe.Ingredients {
+				<li>{ ingredient }</li>
+			}
+		</ul>
+		<h2>Instructions</h2>
+		<ol>
+			for _, instruction := range recipe.InstructionsList {
+				<li>{ instruction }</li>
+			}
+		</ol>
+	}
+}
+
+templ home() {
+	@base() {
+		<h1>Home</h1>
+		<form action="/recipe" method="GET">
+			<input type="url" name="url"/>
+			<button type="submit">Search</button>
+		</form>
+	}
+}
