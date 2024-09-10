@@ -6,6 +6,7 @@ import (
 	"net/http"
 
 	"github.com/a-h/templ"
+	"github.com/bartaldavid/cookbook/db"
 	"github.com/gin-gonic/gin"
 )
 
@@ -30,6 +31,8 @@ func render(c *gin.Context, status int, template templ.Component) error {
 
 func main() {
 	r := gin.Default()
+
+	db.ConnectDatabase()
 
 	r.GET("/", func(c *gin.Context) {
 		render(c, 200, home())
