@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+<!--  -->
+{% block content %}
+<h1>Home</h1>
+<form hx-get="/recipe" hx-target="#content" hx-indicator="#indicator">
+  <input type="url" name="url" />
+  <button type="submit">Search</button>
+</form>
+<span class="htmx-indicator" id="indicator">Loading...</span>
+<div id="content"></div>
+{% endblock %}

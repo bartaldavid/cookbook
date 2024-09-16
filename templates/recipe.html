@@ -1,0 +1,28 @@
+<!-- {% extends "base.html" %} {% block content %} -->
+<h1>{{ recipe.title }}</h1>
+<p>{{ recipe.description }}</p>
+{% if recipe.prep_time %}
+<p>Prep time: {{ recipe.prep_time }} min</p>
+{% endif %} {% if recipe.cook_time %}
+<p>Cook time: {{ recipe.cook_time }} min</p>
+{% endif %} {% if recipe.total_time %}
+<p>Total time: {{ recipe.total_time }} min</p>
+{% endif %}
+<img
+  src="{{ recipe.image }}"
+  alt="{{ recipe.title }}"
+  style="width: 100%; height: auto"
+/>
+<h2>Ingredients</h2>
+<ul>
+  {% for ingredient in recipe.ingredients %}
+  <li>{{ ingredient }}</li>
+  {% endfor %}
+</ul>
+<h2>Instructions</h2>
+<ol>
+  {% for step in recipe.instructions_list %}
+  <li>{{ step }}</li>
+  {% endfor %}
+</ol>
+<!-- {% endblock %} -->

@@ -1,13 +1,29 @@
-from fastapi import FastAPI, HTTPException, Request
+from typing import Annotated
+from fastapi import Depends, FastAPI, HTTPException, Header, Request
 from fastapi.responses import HTMLResponse
 from recipe_scrapers import scrape_html
 import requests
 import validators
 from pydantic import BaseModel
 from fastapi.templating import Jinja2Templates
+from sqlalchemy.orm import Session
 
+from db import models
+from db.crud import create_recipe
+from db.db import SessionLocal
+
+models.Base.metadata.create_all(bind=models.engine)
 
 app = FastAPI()
+
+
+def get_db():
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
+
 
 templates = Jinja2Templates(directory="templates")
 
@@ -15,9 +31,9 @@ templates = Jinja2Templates(directory="templates")
 class RecipeJSON(BaseModel):
     title: str
     author: str
-    cook_time: int | None
+    cook_time: int | None = None
     host: str
-    total_time: int | None
+    total_time: int | None = None
     image: str
     ingredients: list[str]
     # ingredient_groups: AbstractScraper.ingredient_groups
@@ -29,7 +45,12 @@ class RecipeJSON(BaseModel):
 
 
 @app.get("/recipe")
-def read_item(url: str) -> RecipeJSON:
+def read_item(
+    request: Request,
+    url: str,
+    hx_request: Annotated[str | None, Header()] = None,
+    db: Session = Depends(get_db),
+) -> RecipeJSON:
     if not validators.url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
@@ -52,4 +73,23 @@ def read_item(url: str) -> RecipeJSON:
             detail="Could not scrape html: " + str(e),
         )
 
-    return scraper.to_json()
+    recipe = scraper.to_json()
+
+    recipe_db = create_recipe(db, recipe)
+
+    print(recipe_db)
+    print("saved")
+
+    if hx_request != "true":
+        return recipe
+
+    return templates.TemplateResponse(
+        request=request, name="recipe.html", context=dict(recipe=recipe)
+    )
+
+
+@app.get("/", response_class=HTMLResponse)
+def root(request: Request):
+    return templates.TemplateResponse(
+        request=request, name="recipe-url-form.html", context={}
+    )
