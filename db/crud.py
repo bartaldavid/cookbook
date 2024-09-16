@@ -13,7 +13,7 @@ def create_recipe(db: Session, recipe: RecipeJSON):
         host=recipe.host,
         total_time=recipe.total_time,
         image=recipe.image,
-        ingredients=recipe.ingredients,
+        ingredients=str(recipe.ingredients),
     )
     db.add(db_recipe)
     db.commit()

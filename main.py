@@ -8,11 +8,11 @@ from pydantic import BaseModel
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 
-from db import models
+import db.models as models
 from db.crud import create_recipe
-from db.db import SessionLocal
+from db.db import SessionLocal, engine
 
-models.Base.metadata.create_all(bind=models.engine)
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -31,9 +31,10 @@ templates = Jinja2Templates(directory="templates")
 class RecipeJSON(BaseModel):
     title: str
     author: str
-    cook_time: int | None = None
     host: str
+    cook_time: int | None = None
     total_time: int | None = None
+    prep_time: int | None = None
     image: str
     ingredients: list[str]
     # ingredient_groups: AbstractScraper.ingredient_groups
@@ -50,7 +51,7 @@ def read_item(
     url: str,
     hx_request: Annotated[str | None, Header()] = None,
     db: Session = Depends(get_db),
-) -> RecipeJSON:
+) -> RecipeJSON | HTMLResponse:
     if not validators.url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
@@ -66,19 +67,16 @@ def read_item(
         )
 
     try:
-        scraper = scrape_html(html=res.content, org_url=url)
+        scraper = scrape_html(html=str(res.content), org_url=url)
     except Exception as e:
         raise HTTPException(
             status_code=500,
             detail="Could not scrape html: " + str(e),
         )
 
-    recipe = scraper.to_json()
+    recipe = RecipeJSON.model_validate_json(scraper.to_json())
 
-    recipe_db = create_recipe(db, recipe)
-
-    print(recipe_db)
-    print("saved")
+    create_recipe(db, recipe)
 
     if hx_request != "true":
         return recipe
