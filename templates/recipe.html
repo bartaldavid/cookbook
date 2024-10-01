@@ -1,7 +1,9 @@
 <!-- {% extends "base.html" %} {% block content %} -->
 <h1>{{ recipe.title }}</h1>
 <p>{{ recipe.description }}</p>
-{% if recipe.prep_time %}
+{% if recipe.author %}
+<p>Author: {{ recipe.author }}</p>
+{% endif %} {% if recipe.prep_time %}
 <p>Prep time: {{ recipe.prep_time }} min</p>
 {% endif %} {% if recipe.cook_time %}
 <p>Cook time: {{ recipe.cook_time }} min</p>
@@ -9,20 +11,22 @@
 <p>Total time: {{ recipe.total_time }} min</p>
 {% endif %}
 <img
-  src="{{ recipe.image }}"
-  alt="{{ recipe.title }}"
-  style="width: 100%; height: auto"
+    src="{{ recipe.image }}"
+    alt="{{ recipe.title }}"
+    style="width: 100%; height: auto"
 />
 <h2>Ingredients</h2>
 <ul>
-  {% for ingredient in recipe.ingredients %}
-  <li>{{ ingredient }}</li>
-  {% endfor %}
+    {% for group in recipe.ingredient_groups %} {% if group.purpose %}
+    <p>{{group.purpose}}</p>
+    {% endif %} {% for ingredient in group.ingredients %}
+    <li>{{ ingredient }}</li>
+    {% endfor %} {% endfor %}
 </ul>
 <h2>Instructions</h2>
 <ol>
-  {% for step in recipe.instructions_list %}
-  <li>{{ step }}</li>
-  {% endfor %}
+    {% for step in recipe.instructions_list %}
+    <li>{{ step }}</li>
+    {% endfor %}
 </ol>
 <!-- {% endblock %} -->

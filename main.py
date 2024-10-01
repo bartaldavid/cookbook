@@ -1,18 +1,16 @@
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Header, Request
+from fastapi import Depends, FastAPI, HTTPException, Header, Request, Response
 from fastapi.responses import HTMLResponse
-from recipe_scrapers import scrape_html
-import requests
 import validators
-from pydantic import BaseModel
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from .utils import download_recipe
 
-import db.models as models
-from db.crud import create_recipe
-from db.db import SessionLocal, engine
+from .crud import save_recipe_to_db, get_recipe_from_db
+from .db import SessionLocal, engine
+from .models import Base
 
-models.Base.metadata.create_all(bind=engine)
+Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
@@ -25,64 +23,51 @@ def get_db():
         db.close()
 
 
+HX_Request = Annotated[str | None, Header()]
+
 templates = Jinja2Templates(directory="templates")
-
-
-class RecipeJSON(BaseModel):
-    title: str
-    author: str
-    host: str
-    cook_time: int | None = None
-    total_time: int | None = None
-    prep_time: int | None = None
-    image: str
-    ingredients: list[str]
-    # ingredient_groups: AbstractScraper.ingredient_groups
-    instructions: str
-    instructions_list: list[str]
-    language: str
-    site_name: str
-    image: str
 
 
 @app.get("/recipe")
 def read_item(
     request: Request,
     url: str,
-    hx_request: Annotated[str | None, Header()] = None,
+    hx_request: HX_Request = None,
     db: Session = Depends(get_db),
-) -> RecipeJSON | HTMLResponse:
+):
     if not validators.url(url):
         raise HTTPException(status_code=400, detail="Invalid URL")
 
-    try:
-        res = requests.get(url)
-    except requests.exceptions.RequestException as e:
-        raise HTTPException(status_code=500, detail="Could not fetch the URL" + str(e))
+    recipe = get_recipe_from_db(db, url=url)
 
-    if res.status_code != 200:
-        raise HTTPException(
-            status_code=500,
-            detail="Request failed with status code: " + str(res.status_code),
-        )
-
-    try:
-        scraper = scrape_html(html=str(res.content), org_url=url)
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail="Could not scrape html: " + str(e),
-        )
-
-    recipe = RecipeJSON.model_validate_json(scraper.to_json())
-
-    create_recipe(db, recipe)
+    if not recipe:
+        recipe = download_recipe(url)
+        save_recipe_to_db(db, recipe)
 
     if hx_request != "true":
         return recipe
 
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=dict(recipe=recipe)
+    )
+
+
+@app.get("/recipe/{recipe_id:int}")
+def get_recipe_from_db_route(
+    request: Request,
+    recipe_id: int,
+    db: Session = Depends(get_db),
+    hx_request: HX_Request = None,
+):
+    recipe_from_db = get_recipe_from_db(db, recipe_id)
+    if not recipe_from_db:
+        raise HTTPException(status_code=404, detail="Recipe not found")
+
+    if hx_request != "true":
+        return recipe_from_db
+
+    return templates.TemplateResponse(
+        request=request, name="recipe.html", context=dict(recipe=recipe_from_db)
     )
 
 
