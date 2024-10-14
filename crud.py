@@ -60,7 +60,7 @@ def save_recipe_to_db(db: Session, recipe: RecipeScraperResult) -> int:
 
 
 def get_recipe_from_db(
-    db: Session, recipe_id: int | None = None, url: str | None = None
+    db: Session, recipe_id: int | None = None, url: str | None = None, nanoid: str | None = None
 ) -> RecipeFromDatabase | None:
     recipe: Recipe | None = None
 
@@ -69,6 +69,10 @@ def get_recipe_from_db(
     if url:
         recipe = db.execute(
             select(Recipe).where(Recipe.url == url)
+        ).scalar_one_or_none()
+    if nanoid:
+        recipe = db.execute(
+            select(Recipe).where(Recipe.nanoid == nanoid)
         ).scalar_one_or_none()
 
     if not recipe:
@@ -113,5 +117,5 @@ def get_recipe_from_db(
 
 
 def get_all_recipes(db: Session):
-    recipes = db.execute(select(Recipe.id, Recipe.title)).all()
+    recipes = db.execute(select(Recipe.nanoid, Recipe.title)).all()
     return recipes

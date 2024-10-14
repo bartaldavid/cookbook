@@ -14,7 +14,7 @@
   <ul>
     {% for recipe in recipes %}
       <li>
-        <a href="/recipe/{{ recipe.id }}" hx-boost="true" hx-target="main">{{ recipe.title }}</a>
+        <a href="/recipe/{{ recipe.nanoid }}" hx-boost="true" hx-target="main">{{ recipe.title }}</a>
       </li>
     {% endfor %}
   </ul>

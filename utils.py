@@ -1,6 +1,7 @@
 import requests
 from recipe_scrapers import scrape_html
 from .schemas import RecipeScraperResult
+from nanoid import generate
 
 
 def download_recipe(url: str) -> RecipeScraperResult:
@@ -10,3 +11,10 @@ def download_recipe(url: str) -> RecipeScraperResult:
     recipe_json = scraper.to_json()
     recipe = RecipeScraperResult(**recipe_json)
     return recipe
+
+
+def generate_url_safe_nanoid() -> str:
+    return generate(
+        alphabet="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ_abcdefghijklmnopqrstuvwxyz",
+        size=12,
+    )

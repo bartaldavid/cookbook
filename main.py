@@ -52,14 +52,14 @@ def read_item(
     )
 
 
-@app.get("/recipe/{recipe_id:int}")
+@app.get("/recipe/{recipe_nanoid:str}")
 def get_recipe_from_db_route(
     request: Request,
-    recipe_id: int,
+    recipe_nanoid: str,
     db: Session = Depends(get_db),
     hx_request: HX_Request = None,
 ):
-    recipe_from_db = get_recipe_from_db(db, recipe_id)
+    recipe_from_db = get_recipe_from_db(db, nanoid=recipe_nanoid)
     if not recipe_from_db:
         raise HTTPException(status_code=404, detail="Recipe not found")
 

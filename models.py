@@ -3,6 +3,8 @@ from sqlalchemy import ForeignKey, Integer
 from sqlalchemy.orm import Mapped, mapped_column, relationship
 from sqlalchemy.ext.declarative import declarative_base
 
+from .utils import generate_url_safe_nanoid
+
 
 Base = declarative_base()
 
@@ -21,6 +23,9 @@ class Recipe(Base):
     prep_time: Mapped[Optional[int]]
     description: Mapped[Optional[str]]
     url: Mapped[Optional[str]] = mapped_column(unique=True, index=True)
+    nanoid: Mapped[str] = mapped_column(
+        unique=True, index=True, default=generate_url_safe_nanoid
+    )
 
     instruction_steps: Mapped[list["InstructionStep"]] = relationship(
         back_populates="recipe"
