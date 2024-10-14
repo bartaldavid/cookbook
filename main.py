@@ -6,7 +6,7 @@ from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from .utils import download_recipe
 
-from .crud import save_recipe_to_db, get_recipe_from_db
+from .crud import get_all_recipes, save_recipe_to_db, get_recipe_from_db
 from .db import SessionLocal, engine
 from .models import Base
 
@@ -72,7 +72,10 @@ def get_recipe_from_db_route(
 
 
 @app.get("/", response_class=HTMLResponse)
-def root(request: Request):
+def root(request: Request, db: Session = Depends(get_db)):
+
+    recipes = get_all_recipes(db)
+
     return templates.TemplateResponse(
-        request=request, name="recipe-url-form.html", context={}
+        request=request, name="recipe-url-form.html", context={"recipes": recipes}
     )

@@ -13,54 +13,50 @@ from .schemas import (
 )
 
 
-def save_recipe_to_db(db: Session, recipe: RecipeScraperResult):
-    try:
-        db_recipe_id = db.execute(
-            insert(Recipe)
-            .values(
-                language=recipe.language,
-                title=recipe.title,
-                author=recipe.author,
-                cook_time=recipe.cook_time,
-                host=recipe.host,
-                total_time=recipe.total_time,
-                image=recipe.image,
-                prep_time=recipe.prep_time,
-                url=recipe.canonical_url,
-                description=recipe.description,
-            )
-            .returning(Recipe.id)
-        ).scalar_one()
+def save_recipe_to_db(db: Session, recipe: RecipeScraperResult) -> int:
+    db_recipe_id = db.execute(
+        insert(Recipe)
+        .values(
+            language=recipe.language,
+            title=recipe.title,
+            author=recipe.author,
+            cook_time=recipe.cook_time,
+            host=recipe.host,
+            total_time=recipe.total_time,
+            image=recipe.image,
+            prep_time=recipe.prep_time,
+            url=recipe.canonical_url,
+            description=recipe.description,
+        )
+        .returning(Recipe.id)
+    ).scalar_one()
 
-        for ingredient_group in recipe.ingredient_groups:
-            ingredient_group_db = db.execute(
-                insert(IngredientGroup)
-                .values(name=ingredient_group.purpose, recipe_id=db_recipe_id)
-                .returning(IngredientGroup)
-            )
-            ingredient_group_db = ingredient_group_db.scalar_one()
+    for ingredient_group in recipe.ingredient_groups:
+        ingredient_group_db = db.execute(
+            insert(IngredientGroup)
+            .values(name=ingredient_group.purpose, recipe_id=db_recipe_id)
+            .returning(IngredientGroup)
+        )
+        ingredient_group_db = ingredient_group_db.scalar_one()
 
-            for ingredient in ingredient_group.ingredients:
-                db.execute(
-                    insert(Ingredient).values(
-                        name=ingredient,
-                        recipe_id=db_recipe_id,
-                        ingredient_group_id=ingredient_group_db.id,
-                    )
+        for ingredient in ingredient_group.ingredients:
+            db.execute(
+                insert(Ingredient).values(
+                    name=ingredient,
+                    recipe_id=db_recipe_id,
+                    ingredient_group_id=ingredient_group_db.id,
                 )
+            )
 
-        instructions = [
-            {"instruction": instruction, "recipe_id": db_recipe_id, "order": idx}
-            for idx, instruction in enumerate(recipe.instructions_list)
-        ]
-        db.execute(insert(InstructionStep), instructions)
+    instructions = [
+        {"instruction": instruction, "recipe_id": db_recipe_id, "order": idx}
+        for idx, instruction in enumerate(recipe.instructions_list)
+    ]
+    db.execute(insert(InstructionStep), instructions)
 
-        db.commit()
-        logging.info(f"Recipe created with ID: {db_recipe_id}")
-    except SQLAlchemyError as e:
-        db.rollback()
-        logging.error(f"Error creating recipe: {str(e)}")
-        raise
+    db.commit()
+
+    return db_recipe_id
 
 
 def get_recipe_from_db(
@@ -114,3 +110,8 @@ def get_recipe_from_db(
     except ValidationError as e:
         logging.error(f"Error validating recipe {e.errors()}")
         return None
+
+
+def get_all_recipes(db: Session):
+    recipes = db.execute(select(Recipe.id, Recipe.title)).all()
+    return recipes
