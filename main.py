@@ -126,18 +126,20 @@ def root(request: Request, db: Session = Depends(get_db)):
         context={"recipes": recipes, "user_data": user_json},
     )
 
+
 @app.post("/favorites/{recipe_nanoid:str}")
 def save_recipe_to_favorites(request: Request, recipe_nanoid: str):
     return templates.TemplateResponse(
         request=request,
         name="remove-recipe-button.html",
-        context={'recipe': {'nanoid': recipe_nanoid}}
+        context={"recipe": {"nanoid": recipe_nanoid}},
     )
+
 
 @app.delete("/favorites/{recipe_nanoid:str}")
 def remove_recipe_from_favorites(request: Request, recipe_nanoid: str):
     return templates.TemplateResponse(
         request=request,
         name="save-recipe-button.html",
-        context={'recipe': {'nanoid': recipe_nanoid}}
+        context={"recipe": {"nanoid": recipe_nanoid}},
     )

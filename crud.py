@@ -66,7 +66,6 @@ def get_recipe_from_db(
     url: str | None = None,
     nanoid: str | None = None,
 ) -> RecipeFromDatabase | None:
-    
     recipe: Recipe | None = None
 
     if recipe_id:

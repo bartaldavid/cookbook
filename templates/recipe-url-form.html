@@ -1,26 +1,25 @@
 {% extends 'base.html' %}
 <!--  -->
 {% block content %}
-{% if user_data != 'null' %}
-  <h2>User Data</h2>
-  <pre>{{user_data}}</pre>
-  <a href="/logout">Log out</a>
-{% else %}
-  <a href="/login">Log in</a>
-{% endif %}
-<form hx-get="/recipe/url" hx-target="#content" hx-indicator="#indicator">
-  <fieldset role="group">
-    <input type="url" name="url" placeholder="Paste recipe url here..." />
-    <button type="submit">Search</button>
-  </fieldset>
-</form>
-
-{% if recipes %}
-  <h2>Recipes</h2>
-    {% for recipe in recipes %}
-      {% include 'recipe-card.html' %}
-    {% endfor %}
-{% endif %}
-<span class="htmx-indicator" id="indicator" aria-busy="true">Loading...</span>
-<div id="content"></div>
+    {% if user_data != 'null' %}
+        <h2>User Data</h2>
+        <pre>{{user_data}}</pre>
+        <a href="/logout">Log out</a>
+    {% else %}
+        <a href="/login">Log in</a>
+    {% endif %}
+    <form hx-get="/recipe/url" hx-target="#content" hx-indicator="#indicator">
+        <fieldset role="group">
+            <input type="url" name="url" placeholder="Paste recipe url here..." />
+            <button type="submit">Search</button>
+        </fieldset>
+    </form>
+    {% if recipes %}
+        <h2>Recipes</h2>
+        {% for recipe in recipes %}
+            {% include 'recipe-card.html' %}
+        {% endfor %}
+    {% endif %}
+    <span class="htmx-indicator" id="indicator" aria-busy="true">Loading...</span>
+    <div id="content"></div>
 {% endblock %}
