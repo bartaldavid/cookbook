@@ -17,13 +17,9 @@
 
 {% if recipes %}
   <h2>Recipes</h2>
-  <ul>
     {% for recipe in recipes %}
-      <li>
-        <a href="/recipe/{{ recipe.nanoid }}" hx-boost="true" hx-target="main">{{ recipe.title }}</a>
-      </li>
+      {% include 'recipe-card.html' %}
     {% endfor %}
-  </ul>
 {% endif %}
 <span class="htmx-indicator" id="indicator" aria-busy="true">Loading...</span>
 <div id="content"></div>

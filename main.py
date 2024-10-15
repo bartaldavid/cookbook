@@ -85,7 +85,7 @@ async def get_recipe_from_url(
     #     return recipe
 
     return templates.TemplateResponse(
-        request=request, name="recipe.html", context=dict(recipe=recipe)
+        request=request, name="recipe-details.html", context=dict(recipe=recipe)
     )
 
 
@@ -110,7 +110,7 @@ def get_recipe_from_db_route(
     #     return recipe_from_db
 
     return templates.TemplateResponse(
-        request=request, name="recipe.html", context=dict(recipe=recipe_from_db)
+        request=request, name="recipe-details.html", context=dict(recipe=recipe_from_db)
     )
 
 
@@ -124,4 +124,20 @@ def root(request: Request, db: Session = Depends(get_db)):
         request=request,
         name="recipe-url-form.html",
         context={"recipes": recipes, "user_data": user_json},
+    )
+
+@app.post("/favorites/{recipe_nanoid:str}")
+def save_recipe_to_favorites(request: Request, recipe_nanoid: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="remove-recipe-button.html",
+        context={'recipe': {'nanoid': recipe_nanoid}}
+    )
+
+@app.delete("/favorites/{recipe_nanoid:str}")
+def remove_recipe_from_favorites(request: Request, recipe_nanoid: str):
+    return templates.TemplateResponse(
+        request=request,
+        name="save-recipe-button.html",
+        context={'recipe': {'nanoid': recipe_nanoid}}
     )
