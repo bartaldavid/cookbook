@@ -1,33 +1,36 @@
+import json
+import os
 from typing import Annotated
-from fastapi import Depends, FastAPI, HTTPException, Header, Request, Response
-from fastapi.responses import HTMLResponse, RedirectResponse
+
 import validators
+from authlib.integrations.starlette_client import OAuth, OAuthError
+from fastapi import Depends, FastAPI, Header, HTTPException, Request
+from fastapi.responses import HTMLResponse, RedirectResponse
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
 from starlette.config import Config
 from starlette.middleware.sessions import SessionMiddleware
-from authlib.integrations.starlette_client import OAuth, OAuthError
 
-
-from .utils import scrape_recipe_from_url
-
-from .crud import get_all_recipes, save_recipe_to_db, get_recipe_from_db
+from .crud import get_all_recipes, get_recipe_from_db, save_recipe_to_db
 from .db import SessionLocal, engine
 from .models import Base
+from .utils import scrape_recipe_from_url
 
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
-app.add_middleware(SessionMiddleware, secret_key='secret-key')
+app.add_middleware(
+    SessionMiddleware, secret_key=os.getenv("AUTH_SECRET", "unsafe-secret-key")
+)
 config = Config(".env")
 oauth = OAuth(config)
 
-GOOGLE_OAUTH_CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
+GOOGLE_OAUTH_CONF_URL = "https://accounts.google.com/.well-known/openid-configuration"
 
 oauth.register(
-    name='google',
+    name="google",
     server_metadata_url=GOOGLE_OAUTH_CONF_URL,
-    client_kwargs={'scope': 'openid email profile'},
+    client_kwargs={"scope": "openid email profile"},
 )
 
 
@@ -43,21 +46,23 @@ HX_Request = Annotated[str | None, Header()]
 
 templates = Jinja2Templates(directory="templates")
 
+
 @app.get("/login")
 async def login(request: Request):
-    redirect_uri = request.url_for('auth')
+    redirect_uri = request.url_for("auth")
     return await oauth.google.authorize_redirect(request, redirect_uri)
+
 
 @app.route("/auth")
 async def auth(request: Request):
     try:
         token = await oauth.google.authorize_access_token(request)
     except OAuthError as error:
-        return HTMLResponse(f'<h1>{error.error}</h1>')
-    user = token.get('userinfo')
+        return HTMLResponse(f"<h1>{error.error}</h1>")
+    user = token.get("userinfo")
     if user:
-        request.session['user'] = dict(user)
-    return RedirectResponse(url='/')
+        request.session["user"] = dict(user)
+    return RedirectResponse(url="/")
 
 
 @app.get("/recipe/url")
@@ -83,10 +88,11 @@ async def get_recipe_from_url(
         request=request, name="recipe.html", context=dict(recipe=recipe)
     )
 
-@app.get('/logout')
+
+@app.get("/logout")
 async def logout(request: Request):
-    request.session.pop('user', None)
-    return RedirectResponse(url='/')
+    request.session.pop("user", None)
+    return RedirectResponse(url="/")
 
 
 @app.get("/recipe/{recipe_nanoid:str}")
@@ -110,9 +116,12 @@ def get_recipe_from_db_route(
 
 @app.get("/", response_class=HTMLResponse)
 def root(request: Request, db: Session = Depends(get_db)):
-
     recipes = get_all_recipes(db)
+    user = request.session.get("user")
+    user_json = json.dumps(user)
 
     return templates.TemplateResponse(
-        request=request, name="recipe-url-form.html", context={"recipes": recipes}
+        request=request,
+        name="recipe-url-form.html",
+        context={"recipes": recipes, "user_data": user_json},
     )

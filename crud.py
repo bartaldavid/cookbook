@@ -1,13 +1,14 @@
 import logging
 
 from pydantic import ValidationError
-from sqlalchemy import func, select, insert
+from sqlalchemy import func, insert, select
 from sqlalchemy.orm import Session
-from sqlalchemy.exc import SQLAlchemyError
 
-from .models import IngredientGroup, Recipe, Ingredient, InstructionStep
+from .models import Ingredient, IngredientGroup, InstructionStep, Recipe
 from .schemas import (
     IngredientGroupSchema as IngredientGroupSchema,
+)
+from .schemas import (
     RecipeFromDatabase,
     RecipeScraperResult,
 )
@@ -60,8 +61,12 @@ def save_recipe_to_db(db: Session, recipe: RecipeScraperResult) -> int:
 
 
 def get_recipe_from_db(
-    db: Session, recipe_id: int | None = None, url: str | None = None, nanoid: str | None = None
+    db: Session,
+    recipe_id: int | None = None,
+    url: str | None = None,
+    nanoid: str | None = None,
 ) -> RecipeFromDatabase | None:
+    
     recipe: Recipe | None = None
 
     if recipe_id:

@@ -1,7 +1,9 @@
-from recipe_scrapers import scrape_html
-from .schemas import RecipeScraperResult
-from nanoid import generate
 import httpx
+from nanoid import generate
+from recipe_scrapers import scrape_html
+
+from .schemas import RecipeScraperResult
+
 
 async def scrape_recipe_from_url(url: str) -> RecipeScraperResult:
     async with httpx.AsyncClient() as client:

@@ -1,7 +1,13 @@
 {% extends 'base.html' %}
 <!--  -->
 {% block content %}
-<h1>Home</h1>
+{% if user_data != 'null' %}
+  <h2>User Data</h2>
+  <pre>{{user_data}}</pre>
+  <a href="/logout">Log out</a>
+{% else %}
+  <a href="/login">Log in</a>
+{% endif %}
 <form hx-get="/recipe/url" hx-target="#content" hx-indicator="#indicator">
   <fieldset role="group">
     <input type="url" name="url" placeholder="Paste recipe url here..." />
