@@ -2,7 +2,7 @@
 <!--  -->
 {% block content %}
 <h1>Home</h1>
-<form hx-get="/recipe" hx-target="#content" hx-indicator="#indicator">
+<form hx-get="/recipe/url" hx-target="#content" hx-indicator="#indicator">
   <fieldset role="group">
     <input type="url" name="url" placeholder="Paste recipe url here..." />
     <button type="submit">Search</button>

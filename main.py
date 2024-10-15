@@ -4,7 +4,7 @@ from fastapi.responses import HTMLResponse
 import validators
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
-from .utils import download_recipe
+from .utils import scrape_recipe_from_url
 
 from .crud import get_all_recipes, save_recipe_to_db, get_recipe_from_db
 from .db import SessionLocal, engine
@@ -28,8 +28,8 @@ HX_Request = Annotated[str | None, Header()]
 templates = Jinja2Templates(directory="templates")
 
 
-@app.get("/recipe")
-def read_item(
+@app.get("/recipe/url")
+async def get_recipe_from_url(
     request: Request,
     url: str,
     hx_request: HX_Request = None,
@@ -41,11 +41,11 @@ def read_item(
     recipe = get_recipe_from_db(db, url=url)
 
     if not recipe:
-        recipe = download_recipe(url)
+        recipe = await scrape_recipe_from_url(url)
         save_recipe_to_db(db, recipe)
 
-    if hx_request != "true":
-        return recipe
+    # if hx_request != "true":
+    #     return recipe
 
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=dict(recipe=recipe)
@@ -63,8 +63,8 @@ def get_recipe_from_db_route(
     if not recipe_from_db:
         raise HTTPException(status_code=404, detail="Recipe not found")
 
-    if hx_request != "true":
-        return recipe_from_db
+    # if hx_request != "true":
+    #     return recipe_from_db
 
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=dict(recipe=recipe_from_db)
