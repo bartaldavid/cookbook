@@ -1,9 +1,14 @@
 from typing import Annotated
 from fastapi import Depends, FastAPI, HTTPException, Header, Request, Response
-from fastapi.responses import HTMLResponse
+from fastapi.responses import HTMLResponse, RedirectResponse
 import validators
 from fastapi.templating import Jinja2Templates
 from sqlalchemy.orm import Session
+from starlette.config import Config
+from starlette.middleware.sessions import SessionMiddleware
+from authlib.integrations.starlette_client import OAuth, OAuthError
+
+
 from .utils import scrape_recipe_from_url
 
 from .crud import get_all_recipes, save_recipe_to_db, get_recipe_from_db
@@ -13,6 +18,17 @@ from .models import Base
 Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
+app.add_middleware(SessionMiddleware, secret_key='secret-key')
+config = Config(".env")
+oauth = OAuth(config)
+
+GOOGLE_OAUTH_CONF_URL = 'https://accounts.google.com/.well-known/openid-configuration'
+
+oauth.register(
+    name='google',
+    server_metadata_url=GOOGLE_OAUTH_CONF_URL,
+    client_kwargs={'scope': 'openid email profile'},
+)
 
 
 def get_db():
@@ -26,6 +42,22 @@ def get_db():
 HX_Request = Annotated[str | None, Header()]
 
 templates = Jinja2Templates(directory="templates")
+
+@app.get("/login")
+async def login(request: Request):
+    redirect_uri = request.url_for('auth')
+    return await oauth.google.authorize_redirect(request, redirect_uri)
+
+@app.route("/auth")
+async def auth(request: Request):
+    try:
+        token = await oauth.google.authorize_access_token(request)
+    except OAuthError as error:
+        return HTMLResponse(f'<h1>{error.error}</h1>')
+    user = token.get('userinfo')
+    if user:
+        request.session['user'] = dict(user)
+    return RedirectResponse(url='/')
 
 
 @app.get("/recipe/url")
@@ -50,6 +82,11 @@ async def get_recipe_from_url(
     return templates.TemplateResponse(
         request=request, name="recipe.html", context=dict(recipe=recipe)
     )
+
+@app.get('/logout')
+async def logout(request: Request):
+    request.session.pop('user', None)
+    return RedirectResponse(url='/')
 
 
 @app.get("/recipe/{recipe_nanoid:str}")
